@@ -101,7 +101,7 @@ Outfit recommendations and accessory suggestions respect the user's gender prefe
 
 | Add Clothing (AI Analysis) | Outfit History | Mobile View |
 |---|---|---|
-| ![Add Clothing](./screenshots/add-clothing.png) | ![History](./screenshots/history.png) | ![Mobile](./screenshots/mobile.png) |
+| ![Add Clothing](./screenshots/clothing.png) | ![History](./screenshots/history.png) | ![Mobile](./screenshots/mobile.png) |
 
 ---
 
