@@ -13,8 +13,7 @@
 # 👔 SmartWardrobe
 
 ## 🌐 Live Demo
-https://your-app.vercel.app
-
+[SamrtWardrobe]https://smartwardrobe.vercel.app/
 **An AI-powered wardrobe management and outfit recommendation web application.**
 
 SmartWardrobe lets you digitally catalog your clothing, automatically analyze items using AI vision, and receive intelligent outfit suggestions tailored to your local weather, occasion, and personal style — all from a clean, modern interface.
