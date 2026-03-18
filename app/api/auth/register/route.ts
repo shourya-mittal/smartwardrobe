@@ -13,9 +13,19 @@ export async function POST(req: Request) {
       )
     }
 
-    if (password.length < 6) {
+    if (typeof name !== "string" || name.trim().length === 0 || name.trim().length > 100) {
+      return NextResponse.json({ error: "Name must be between 1 and 100 characters" }, { status: 400 })
+    }
+
+    // Basic email format validation server-side
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
+    }
+
+    if (password.length < 6 || password.length > 100) {
       return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
+        { error: "Password must be between 6 and 100 characters" },
         { status: 400 }
       )
     }

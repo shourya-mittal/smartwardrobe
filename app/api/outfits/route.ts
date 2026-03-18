@@ -11,7 +11,8 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url)
-    const limit = parseInt(searchParams.get("limit") || "10")
+    const limitRaw = parseInt(searchParams.get("limit") || "10")
+    const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 10 : limitRaw), 50)
 
     const outfits = await sql`
       SELECT 
@@ -64,6 +65,16 @@ export async function POST(req: Request) {
       )
     }
 
+    // Security: verify all clothing items belong to the current user
+    const validItems = await sql`
+      SELECT id FROM clothes
+      WHERE id = ANY(${items}::int[]) AND user_id = ${session.user.id}
+    `
+    const validIds = validItems.map((r: any) => r.id)
+    if (validIds.length === 0) {
+      return NextResponse.json({ error: "No valid items found" }, { status: 400 })
+    }
+
     // Create the outfit
     const outfitResult = await sql`
       INSERT INTO outfits (user_id, occasion, weather, ai_generated)
@@ -73,17 +84,17 @@ export async function POST(req: Request) {
 
     const outfit = outfitResult[0]
 
-    // Add outfit items
+    // Add outfit items (only verified ones)
     await sql`
       INSERT INTO outfit_items (outfit_id, clothing_id)
-      SELECT ${outfit.id}, UNNEST(${items}::int[])
+      SELECT ${outfit.id}, UNNEST(${validIds}::int[])
     `
 
-    // Update last_worn_at for each clothing item
+    // Update last_worn_at only for verified items
     await sql`
       UPDATE clothes 
       SET last_worn_at = NOW()
-      WHERE id = ANY(${items}::int[])
+      WHERE id = ANY(${validIds}::int[]) AND user_id = ${session.user.id}
     `
 
     return NextResponse.json(outfit, { status: 201 })
