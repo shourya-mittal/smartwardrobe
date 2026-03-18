@@ -19,6 +19,8 @@
 
 SmartWardrobe lets you digitally catalog your clothing, automatically analyze items using AI vision, and receive intelligent outfit suggestions tailored to your local weather, occasion, and personal style — all from a clean, modern interface.
 
+</div>
+
 ---
 
 ## ⚡ Key Highlights
@@ -45,8 +47,6 @@ It combines full-stack engineering with real-world usability.
 ---
 
 [Features](#-features) · [Tech Stack](#-tech-stack) · [Screenshots](#-screenshots) · [Getting Started](#-getting-started) · [Project Structure](#-project-structure) · [Future Improvements](#-future-improvements)
-
-</div>
 
 ---
 
