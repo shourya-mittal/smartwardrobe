@@ -13,7 +13,7 @@
 # 👔 SmartWardrobe
 
 ## 🌐 Live Demo
-https://your-app.vercel.app
+[SmartWardrobe](https://smartwardrobe.vercel.app/)
 
 **An AI-powered wardrobe management and outfit recommendation web application.**
 
