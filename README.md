@@ -23,10 +23,11 @@ SmartWardrobe lets you digitally catalog your clothing, automatically analyze it
 
 ## ⚡ Key Highlights
 
-- AI-powered clothing recognition using LLM vision  
-- Real-time weather-based outfit generation  
-- Full-stack app with authentication & secure storage  
-- Production-ready architecture with scalable backend  
+- AI-powered clothing recognition using LLM vision
+- Real-time weather-based outfit generation
+- Smart daily outfit planner with per-day AI caching
+- Full-stack app with authentication & secure storage
+- Production-ready architecture with scalable backend
 
 ---
 
@@ -35,9 +36,9 @@ SmartWardrobe lets you digitally catalog your clothing, automatically analyze it
 Managing clothes and choosing outfits is a daily problem.  
 This project solves it using AI by:
 
-- Automatically analyzing clothing items  
-- Reducing decision fatigue  
-- Providing context-aware outfit suggestions  
+- Automatically analyzing clothing items
+- Reducing decision fatigue
+- Providing context-aware outfit suggestions
 
 It combines full-stack engineering with real-world usability.
 
@@ -52,16 +53,22 @@ It combines full-stack engineering with real-world usability.
 ## ✨ Features
 
 ### 🧠 AI Clothing Recognition
-Upload a photo of any clothing item and the AI automatically detects its type, dominant color, suitable seasons, and appropriate occasions — no manual tagging required.
+Upload a photo of any clothing item and the AI automatically detects its type, dominant color, material, fit, pattern, suitable seasons, and appropriate occasions — no manual tagging required.
 
 ### 🌤️ Weather-Aware Outfit Suggestions
 SmartWardrobe fetches real-time weather data for your location and factors in temperature, conditions, and season when generating outfit recommendations.
 
 ### 👗 Smart Outfit Recommendations
-Select an occasion and let the AI suggest 3 complete outfit combinations from your wardrobe. The system prioritizes items you haven't worn recently and ensures color coordination. When your wardrobe is small, it suggests complementary items to complete the look.
+Select an occasion and let the AI suggest 3 complete outfit combinations from your wardrobe. The system prioritizes items you haven't worn recently, ensures color coordination, avoids clashing patterns, and matches materials to the weather. When your wardrobe is small, it suggests complementary items to complete the look.
+
+### 📅 Smart Daily Outfit Planner
+Every day, the app automatically picks the single best outfit for you based on today's weather, your recent wear history, and your wardrobe tags. The suggestion is generated once and cached for the day — no repeated AI calls. You can refresh it anytime or log it to your history with one tap.
+
+### 🏷️ Rich Clothing Tags
+Every item is tagged with type, color, seasons, occasions, material (cotton, wool, denim...), fit (slim, regular, oversized), and pattern (solid, striped, plaid...). These tags power more precise and context-aware AI suggestions. Tags are auto-filled by AI on upload and can be edited anytime.
 
 ### 🗂️ Wardrobe Management
-Browse your full wardrobe with filtering by clothing type. Add, view, and delete items with a clean card-based interface.
+Browse your full wardrobe with filtering by clothing type. Add, view, edit tags, and delete items with a clean card-based interface.
 
 ### 📅 Outfit History
 Every outfit you choose to wear is saved to your history with the date, occasion, and weather conditions at the time.
@@ -71,6 +78,9 @@ Full email/password authentication with hashed passwords, JWT sessions, and per-
 
 ### 🎨 Gender-Aware Suggestions
 Outfit recommendations and accessory suggestions respect the user's gender preference, ensuring contextually appropriate styling advice.
+
+### ⚙️ Profile Management
+Users can update their display name and change their password directly from the settings page.
 
 ---
 
@@ -84,11 +94,10 @@ Outfit recommendations and accessory suggestions respect the user's gender prefe
 | **Database** | PostgreSQL via Neon (serverless) |
 | **Authentication** | NextAuth.js (Credentials provider, JWT sessions) |
 | **File Storage** | Vercel Blob (private access) |
-| **AI — Vision** | Groq API (`meta-llama/llama-4-scout-17b-16e-instruct`) |
-| **AI — Outfits** | Groq API (`meta-llama/llama-4-scout-17b-16e-instruct`) |
+| **AI — Vision** | `groq-sdk` with `meta-llama/llama-4-scout-17b-16e-instruct` |
+| **AI — Outfits** | `@ai-sdk/groq` with `meta-llama/llama-4-scout-17b-16e-instruct` |
 | **Weather** | OpenWeatherMap API |
 | **Data Fetching** | SWR |
-| **Form Handling** | React Hook Form + Zod |
 | **Notifications** | Sonner |
 
 ---
@@ -153,7 +162,7 @@ OPENWEATHERMAP_API_KEY=your_openweathermap_api_key
 
 ### 4. Set up the database
 
-Run the schema migration in your Neon SQL editor or using the Neon CLI:
+Run the schema migration in your Neon SQL editor:
 
 ```bash
 # Copy the contents of scripts/001-create-tables.sql
@@ -165,6 +174,35 @@ Or connect directly:
 ```bash
 psql $DATABASE_URL -f scripts/001-create-tables.sql
 ```
+
+> **If upgrading an existing database**, also run these migrations:
+> ```sql
+> -- Add new clothing tag columns
+> ALTER TABLE clothes
+>   ADD COLUMN material TEXT NOT NULL DEFAULT 'other',
+>   ADD COLUMN fit      TEXT NOT NULL DEFAULT 'regular',
+>   ADD COLUMN pattern  TEXT NOT NULL DEFAULT 'solid';
+>
+> -- Smart daily planner tables
+> CREATE TABLE daily_suggestions (
+>   id               SERIAL PRIMARY KEY,
+>   user_id          INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+>   date             DATE NOT NULL,
+>   outfit_title     TEXT NOT NULL,
+>   reasoning        TEXT NOT NULL,
+>   confidence       INT NOT NULL,
+>   additional_items JSONB DEFAULT '[]',
+>   weather_snapshot JSONB,
+>   created_at       TIMESTAMPTZ DEFAULT NOW(),
+>   UNIQUE(user_id, date)
+> );
+>
+> CREATE TABLE daily_suggestion_items (
+>   id            SERIAL PRIMARY KEY,
+>   suggestion_id INT NOT NULL REFERENCES daily_suggestions(id) ON DELETE CASCADE,
+>   clothing_id   INT NOT NULL
+> );
+> ```
 
 ### 5. Set up Vercel Blob
 
@@ -192,20 +230,29 @@ smartwardrobe/
 │   │   ├── analyze-clothing/   # AI vision endpoint
 │   │   ├── auth/               # NextAuth + registration
 │   │   ├── clothes/            # Wardrobe CRUD
+│   │   │   └── [id]/           # Edit clothing item tags (PATCH)
+│   │   ├── daily-suggestion/   # Smart daily outfit planner
 │   │   ├── file/               # Private image serving
 │   │   ├── outfits/            # Outfit history
 │   │   ├── suggest/            # AI outfit recommendations
 │   │   ├── upload/             # Image upload to Blob
+│   │   ├── user/profile/       # Profile update endpoint
 │   │   └── weather/            # OpenWeatherMap proxy
 │   ├── dashboard/
 │   │   ├── history/            # Outfit history page
-│   │   ├── settings/           # User settings
+│   │   ├── settings/           # User settings & profile editing
 │   │   ├── suggest/            # Outfit suggestion page
 │   │   └── wardrobe/           # Wardrobe management page
 │   ├── login/                  # Login page
 │   └── register/               # Registration page
 ├── components/
 │   ├── dashboard/              # Dashboard-specific components
+│   │   ├── add-clothing-dialog.tsx
+│   │   ├── edit-clothing-dialog.tsx
+│   │   ├── clothing-card.tsx
+│   │   ├── daily-outfit-widget.tsx
+│   │   ├── weather-widget.tsx
+│   │   └── sidebar.tsx
 │   └── ui/                     # shadcn/ui component library
 ├── lib/
 │   ├── auth.ts                 # NextAuth configuration
@@ -222,17 +269,20 @@ smartwardrobe/
 ## 🗄️ Database Schema
 
 ```sql
-users         — id, name, email, password, gender, location, created_at
-clothes       — id, user_id, name, type, color, seasons, occasions, image_pathname, last_worn_at
-outfits       — id, user_id, occasion, weather (JSONB), ai_generated, worn_at
-outfit_items  — id, outfit_id, clothing_id
+users                  — id, name, email, password, gender, location, created_at
+clothes                — id, user_id, name, type, color, seasons, occasions,
+                         material, fit, pattern, image_pathname, last_worn_at
+outfits                — id, user_id, occasion, weather (JSONB), ai_generated, worn_at
+outfit_items           — id, outfit_id, clothing_id
+daily_suggestions      — id, user_id, date, outfit_title, reasoning, confidence,
+                         additional_items (JSONB), weather_snapshot (JSONB)
+daily_suggestion_items — id, suggestion_id, clothing_id
 ```
 
 ---
 
 ## 🔮 Future Improvements
 
-- [ ] **Edit clothing items** — update metadata after initial save
 - [ ] **Multiple images per item** — front, back, and detail views
 - [ ] **Outfit sharing** — share outfit combinations publicly or with friends
 - [ ] **Style preferences** — let users define their aesthetic (minimalist, streetwear, formal-first, etc.)
@@ -240,7 +290,6 @@ outfit_items  — id, outfit_id, clothing_id
 - [ ] **Wear frequency analytics** — charts showing which items you wear most and least
 - [ ] **Shopping suggestions** — identify wardrobe gaps and suggest items to buy
 - [ ] **Mobile app** — React Native version with camera integration
-- [ ] **Dark mode** — full dark/light mode toggle
 - [ ] **Collaborative wardrobes** — shared wardrobe spaces for couples or housemates
 
 ---
@@ -261,6 +310,5 @@ outfit_items  — id, outfit_id, clothing_id
 
 **Shourya Mittal**  
 📧 shouryamittal2004@gmail.com  
-Built with ❤️ as a full-stack portfolio project.
 
 </div>
