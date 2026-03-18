@@ -44,9 +44,8 @@ export default function SuggestPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [selectedOutfit, setSelectedOutfit] = useState<number | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [weather, setWeather] = useState<WeatherData | null>(null)
 
-  // Both WeatherWidget and this page use the same SWR key — zero duplicate requests
-  const { data: weather } = useSWR<WeatherData>("/api/weather", fetcher)
   const { data: clothes } = useSWR<ClothingItem[]>("/api/clothes", fetcher)
 
   const handleGenerate = async () => {
@@ -133,7 +132,7 @@ export default function SuggestPage() {
       <div className="p-6 space-y-6">
         {/* Controls */}
         <div className="grid gap-6 md:grid-cols-3">
-          <WeatherWidget />
+          <WeatherWidget onWeatherLoad={setWeather} />
 
           <Card>
             <CardHeader className="pb-2">
@@ -222,7 +221,6 @@ export default function SuggestPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {/* Wardrobe item images */}
                     <div className="flex flex-wrap gap-2 mb-3">
                       {outfit.items.map((item) => (
                         <div
@@ -238,8 +236,6 @@ export default function SuggestPage() {
                         </div>
                       ))}
                     </div>
-
-                    {/* Wardrobe item name badges */}
                     <div className="flex flex-wrap gap-1 mb-3">
                       {outfit.items.map((item) => (
                         <Badge key={item.id} variant="outline" className="text-xs">
@@ -247,15 +243,11 @@ export default function SuggestPage() {
                         </Badge>
                       ))}
                     </div>
-
-                    {/* AI reasoning */}
                     {outfit.reasoning && (
                       <p className="text-sm text-muted-foreground mb-3">
                         {outfit.reasoning}
                       </p>
                     )}
-
-                    {/* Additional items suggestions — only shown when wardrobe is small */}
                     {outfit.additionalItems.length > 0 && (
                       <div className="border-t pt-3 mt-1">
                         <p className="text-xs font-medium text-muted-foreground mb-2">

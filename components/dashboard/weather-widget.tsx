@@ -25,7 +25,7 @@ function getWeatherIcon(icon: string) {
   return <CloudIcon className="h-10 w-10 text-gray-400" />
 }
 
-export function WeatherWidget() {
+export function WeatherWidget({ onWeatherLoad }: { onWeatherLoad?: (w: WeatherData) => void }) {
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null)
 
   useEffect(() => {
@@ -50,7 +50,8 @@ export function WeatherWidget() {
     : "/api/weather"
 
   const { data: weather, isLoading, error } = useSWR<WeatherData>(url, fetcher, {
-    refreshInterval: 600000, // Refresh every 10 minutes
+    refreshInterval: 600000,
+    onSuccess: (data) => onWeatherLoad?.(data),
   })
 
   if (isLoading) {

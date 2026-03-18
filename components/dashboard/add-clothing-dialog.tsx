@@ -29,10 +29,16 @@ import {
   COLORS,
   SEASONS,
   OCCASIONS,
+  MATERIALS,
+  FITS,
+  PATTERNS,
   ClothingType,
   Color,
   Season,
   Occasion,
+  Material,
+  Fit,
+  Pattern,
 } from "@/lib/types"
 
 interface AddClothingDialogProps {
@@ -50,40 +56,44 @@ export function AddClothingDialog({
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
   const [file, setFile] = useState<File | null>(null)
-  // FIX #3 & #4: store the pathname from the first upload so we don't re-upload on submit
   const [uploadedPathname, setUploadedPathname] = useState<string | null>(null)
   const [name, setName] = useState("")
   const [type, setType] = useState<ClothingType>("top")
   const [color, setColor] = useState<Color>("black")
   const [seasons, setSeasons] = useState<Season[]>(["all"])
   const [occasions, setOccasions] = useState<Occasion[]>(["casual"])
+  const [material, setMaterial] = useState<Material>("cotton")
+  const [fit, setFit] = useState<Fit>("regular")
+  const [pattern, setPattern] = useState<Pattern>("solid")
 
-
-const analyzeClothing = async (file: File) => {
-  try {
-    setIsAnalyzing(true)
-    const formData = new FormData()
-    formData.append("file", file)
-    const res = await fetch("/api/analyze-clothing", {
-      method: "POST",
-      body: formData,           // no Content-Type header — browser sets it with boundary
-    })
-    if (!res.ok) {
-      console.error("AI clothing analysis failed")
-      return
+  const analyzeClothing = async (file: File) => {
+    try {
+      setIsAnalyzing(true)
+      const formData = new FormData()
+      formData.append("file", file)
+      const res = await fetch("/api/analyze-clothing", {
+        method: "POST",
+        body: formData,
+      })
+      if (!res.ok) {
+        console.error("AI clothing analysis failed")
+        return
+      }
+      const data = await res.json()
+      if (data.name) setName(data.name)
+      if (data.type) setType(data.type)
+      if (data.color) setColor(data.color)
+      if (Array.isArray(data.seasons) && data.seasons.length > 0) setSeasons(data.seasons)
+      if (Array.isArray(data.occasions) && data.occasions.length > 0) setOccasions(data.occasions)
+      if (data.material) setMaterial(data.material)
+      if (data.fit) setFit(data.fit)
+      if (data.pattern) setPattern(data.pattern)
+    } catch (err) {
+      console.error("Error analyzing clothing", err)
+    } finally {
+      setIsAnalyzing(false)
     }
-    const data = await res.json()
-    if (data.name) setName(data.name)        // new — autofill name
-    if (data.type) setType(data.type)
-    if (data.color) setColor(data.color)
-    if (Array.isArray(data.seasons) && data.seasons.length > 0) setSeasons(data.seasons)
-    if (Array.isArray(data.occasions) && data.occasions.length > 0) setOccasions(data.occasions)
-  } catch (err) {
-    console.error("Error analyzing clothing", err)
-  } finally {
-    setIsAnalyzing(false)
   }
-}
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0]
@@ -105,7 +115,6 @@ const analyzeClothing = async (file: File) => {
       if (!uploadRes.ok) throw new Error("Upload failed")
 
       const { pathname } = await uploadRes.json()
-      // FIX #3 & #4: save pathname so submit can reuse it
       setUploadedPathname(pathname)
 
       await analyzeClothing(file)
@@ -143,15 +152,19 @@ const analyzeClothing = async (file: File) => {
     setOccasions(newOccasions.length > 0 ? newOccasions : ["casual"])
   }
 
+  // FIX 1: resetForm now resets all fields including material, fit, pattern
   const resetForm = () => {
     setPreview(null)
     setFile(null)
-    setUploadedPathname(null) // FIX #5: clear saved pathname on reset
+    setUploadedPathname(null)
     setName("")
     setType("top")
     setColor("black")
     setSeasons(["all"])
     setOccasions(["casual"])
+    setMaterial("cotton")
+    setFit("regular")
+    setPattern("solid")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -169,7 +182,6 @@ const analyzeClothing = async (file: File) => {
     setIsLoading(true)
 
     try {
-      // FIX #3 & #4: reuse the already-uploaded pathname; only upload again if missing
       let pathname = uploadedPathname
       if (!pathname) {
         const formData = new FormData()
@@ -186,6 +198,7 @@ const analyzeClothing = async (file: File) => {
         pathname = data.pathname
       }
 
+      // FIX 2: POST body now includes material, fit, pattern
       const clothingRes = await fetch("/api/clothes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -195,6 +208,9 @@ const analyzeClothing = async (file: File) => {
           color,
           seasons,
           occasions,
+          material,
+          fit,
+          pattern,
           imagePath: pathname,
         }),
       })
@@ -215,7 +231,6 @@ const analyzeClothing = async (file: File) => {
     }
   }
 
-  // FIX #1 & #2: single return with <Dialog> and <DialogContent> wrapping everything
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -256,7 +271,7 @@ const analyzeClothing = async (file: File) => {
                     e.stopPropagation()
                     setPreview(null)
                     setFile(null)
-                    setUploadedPathname(null) // also clear pathname when removing image
+                    setUploadedPathname(null)
                   }}
                 >
                   <XIcon className="h-3 w-3" />
@@ -342,6 +357,46 @@ const analyzeClothing = async (file: File) => {
                 ))}
               </div>
             </Field>
+
+            {/* FIX 3: Material, Fit, Pattern dropdowns added */}
+            <div className="grid grid-cols-3 gap-4">
+              <Field>
+                <FieldLabel>Material</FieldLabel>
+                <Select value={material} onValueChange={(v) => setMaterial(v as Material)} disabled={isLoading}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {MATERIALS.map((m) => (
+                      <SelectItem key={m} value={m} className="capitalize">{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field>
+                <FieldLabel>Fit</FieldLabel>
+                <Select value={fit} onValueChange={(v) => setFit(v as Fit)} disabled={isLoading}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {FITS.map((f) => (
+                      <SelectItem key={f} value={f} className="capitalize">{f}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field>
+                <FieldLabel>Pattern</FieldLabel>
+                <Select value={pattern} onValueChange={(v) => setPattern(v as Pattern)} disabled={isLoading}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PATTERNS.map((p) => (
+                      <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
+
           </FieldGroup>
 
           <div className="flex gap-3 justify-end">

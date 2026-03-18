@@ -11,13 +11,15 @@ import { Separator } from "@/components/ui/separator"
 import { WeatherWidget } from "@/components/dashboard/weather-widget"
 import { ClothingCard } from "@/components/dashboard/clothing-card"
 import { AddClothingDialog } from "@/components/dashboard/add-clothing-dialog"
+import { DailyOutfitWidget } from "@/components/dashboard/daily-outfit-widget"
 import { PlusIcon, SparklesIcon, ShirtIcon, ArrowRightIcon } from "lucide-react"
-import { ClothingItem } from "@/lib/types"
+import { ClothingItem, WeatherData } from "@/lib/types"
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 export default function DashboardPage() {
   const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [weather, setWeather] = useState<WeatherData | null>(null)
   const { data: clothes, isLoading, mutate } = useSWR<ClothingItem[]>(
     "/api/clothes",
     fetcher
@@ -69,7 +71,12 @@ export default function DashboardPage() {
               </Link>
             </CardContent>
           </Card>
-          <WeatherWidget />
+          <WeatherWidget onWeatherLoad={setWeather} />
+        </div>
+
+        {/* Daily Outfit Planner */}
+        <div className="grid gap-6">
+          <DailyOutfitWidget weather={weather} />
         </div>
 
         {/* Stats */}
@@ -119,6 +126,7 @@ export default function DashboardPage() {
                     key={String(item.id)}
                     item={item}
                     onDelete={() => mutate()}
+                    onEdit={() => mutate()}
                   />
                 ))}
               </div>

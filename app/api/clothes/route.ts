@@ -97,7 +97,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { name, type, color, seasons, occasions, imageUrl, imagePath } = body
+    const { name, type, color, seasons, occasions, material, fit, pattern, imageUrl, imagePath } = body
 
     if (!name || !type || !color || !seasons || !occasions || !imagePath) {
       return NextResponse.json(
@@ -107,8 +107,8 @@ export async function POST(req: Request) {
     }
 
     const result = await sql`
-      INSERT INTO clothes (user_id, name, type, color, seasons, occasions, image_url, image_pathname)
-      VALUES (${session.user.id}, ${name}, ${type}, ${color}, ${seasons}, ${occasions}, ${imageUrl || ""}, ${imagePath})
+      INSERT INTO clothes (user_id, name, type, color, seasons, occasions, material, fit, pattern, image_url, image_pathname)
+      VALUES (${session.user.id}, ${name}, ${type}, ${color}, ${seasons}, ${occasions}, ${material ?? "other"}, ${fit ?? "regular"}, ${pattern ?? "solid"}, ${imageUrl || ""}, ${imagePath})
       RETURNING *
     `
 

@@ -36,6 +36,37 @@ export const OCCASIONS = [
   "party",
 ] as const
 
+export const MATERIALS = [
+  "cotton",
+  "linen",
+  "wool",
+  "denim",
+  "leather",
+  "silk",
+  "polyester",
+  "knit",
+  "synthetic",
+  "other",
+] as const
+
+export const FITS = [
+  "slim",
+  "regular",
+  "relaxed",
+  "oversized",
+] as const
+
+export const PATTERNS = [
+  "solid",
+  "striped",
+  "plaid",
+  "floral",
+  "graphic",
+  "checkered",
+  "abstract",
+  "other",
+] as const
+
 export const GENDERS = [
   "male",
   "female",
@@ -47,6 +78,9 @@ export type ClothingType = (typeof CLOTHING_TYPES)[number]
 export type Color = (typeof COLORS)[number]
 export type Season = (typeof SEASONS)[number]
 export type Occasion = (typeof OCCASIONS)[number]
+export type Material = (typeof MATERIALS)[number]
+export type Fit = (typeof FITS)[number]
+export type Pattern = (typeof PATTERNS)[number]
 export type Gender = (typeof GENDERS)[number]
 
 export interface ClothingItem {
@@ -57,6 +91,9 @@ export interface ClothingItem {
   color: Color
   seasons: Season[]
   occasions: Occasion[]
+  material?: Material
+  fit?: Fit
+  pattern?: Pattern
   image_url: string
   image_pathname: string
   last_worn_at: string | null

@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 
     // Get user's wardrobe
     const clothes = await sql`
-      SELECT id, name, type, color, seasons, occasions, image_pathname, last_worn_at
+      SELECT id, name, type, color, seasons, occasions, material, fit, pattern, image_pathname, last_worn_at
       FROM clothes
       WHERE user_id = ${session.user.id}
     `
@@ -88,6 +88,9 @@ export async function POST(req: Request) {
       color: item.color,
       seasons: item.seasons,
       occasions: item.occasions,
+      material: item.material ?? "unknown",
+      fit: item.fit ?? "regular",
+      pattern: item.pattern ?? "solid",
       recentlyWorn: recentItemIds.has(item.id),
     }))
 
@@ -114,6 +117,9 @@ RULES:
 6. Consider adding accessories when appropriate
 7. Each outfit MUST use a different combination of itemIds. Never repeat the same set of items across outfits. If the wardrobe is too small for 3 unique combinations, combine items in different ways or use subsets.
 8. Suggest clothing and additionalItems appropriate for the user's gender. For example, do not suggest heels for male, do not suggest ties for female unless it is a style choice.
+9. Match materials to the weather — prefer linen/cotton for hot weather, wool/knit for cold.
+10. Avoid clashing patterns — do not pair two bold patterns (e.g. striped + plaid) in the same outfit. Solid items pair well with any pattern.
+11. Consider fit cohesion — avoid pairing oversized top with oversized bottom unless intentional streetwear look.
 
 IMPORTANT:
 Only use item IDs from the wardrobe list above for itemIds.

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import Groq from "groq-sdk"                          // ✅ correct import
-import { CLOTHING_TYPES, COLORS, SEASONS, OCCASIONS } from "@/lib/types"
+import { CLOTHING_TYPES, COLORS, SEASONS, OCCASIONS, MATERIALS, FITS, PATTERNS } from "@/lib/types"
 
 export async function POST(req: Request) {
   try {
@@ -50,7 +50,10 @@ Return ONLY a JSON object with this exact shape (no markdown, no explanation):
   "type": "<one of: ${CLOTHING_TYPES.join(", ")}>",
   "color": "<one of: ${COLORS.join(", ")}>",
   "seasons": ["<one or more of: ${SEASONS.join(", ")}>"],
-  "occasions": ["<one or more of: ${OCCASIONS.join(", ")}>"]
+  "occasions": ["<one or more of: ${OCCASIONS.join(", ")}>"],
+  "material": "<one of: ${MATERIALS.join(", ")}>",
+  "fit": "<one of: ${FITS.join(", ")}>",
+  "pattern": "<one of: ${PATTERNS.join(", ")}>"
 }`
 
     const response = await groq.chat.completions.create({
@@ -94,6 +97,9 @@ Return ONLY a JSON object with this exact shape (no markdown, no explanation):
       color: COLORS.includes(parsed.color) ? parsed.color : null,
       seasons: parsed.seasons?.filter((s: string) => SEASONS.includes(s as any)) ?? [],
       occasions: parsed.occasions?.filter((o: string) => OCCASIONS.includes(o as any)) ?? [],
+      material: MATERIALS.includes(parsed.material) ? parsed.material : null,
+      fit: FITS.includes(parsed.fit) ? parsed.fit : null,
+      pattern: PATTERNS.includes(parsed.pattern) ? parsed.pattern : null,
     })
   } catch (error) {
     console.error("Error analyzing clothing:", error)

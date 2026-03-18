@@ -85,6 +85,7 @@ export default function WardrobePage() {
                     key={String(item.id)}
                     item={item}
                     onDelete={handleDelete}
+                    onEdit={() => mutate()}
                   />
                 ))}
               </div>
